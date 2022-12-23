@@ -1,0 +1,222 @@
+"""
+Name: Zahra Syed
+Date: April 14, 2022
+Assignment: Super Break-out!
+Description: This is the sprites file for the Breakout code. In this file,
+            sprites for the ball, the players, bricks, endzones, and labels
+            are shown. Each class and method is called in the main function
+            for their specified purposes.
+"""
+import pygame, random
+
+class Ball(pygame.sprite.Sprite):
+    '''This class defines the sprite for our Ball.'''
+    def __init__(self, screen, ball_num):
+        '''This initializer takes a screen surface as a parameter, initializes
+        the image and rect attributes, and x,y direction of the ball.'''
+        # Call the parent __init__() method
+        pygame.sprite.Sprite.__init__(self)
+
+        # Set the image and rect attributes for the Ball
+        self.image= pygame.image.load("monsFront.png")
+        self.image = pygame.transform.scale(self.image, (20, 20))
+        self.rect = self.image.get_rect()
+
+        if ball_num == 1:
+            self.rect.center = ((screen.get_width()/2) - 50, screen.get_height()/2)
+        else:
+            self.rect.center = (screen.get_width()/2, (screen.get_height()/2) + 50)
+
+        # Instance variables to keep track of the screen surface
+        # and set the initial x and y vector for the ball.
+        self.__screen = screen
+        self.__dx = 5
+        self.__dy = 4
+
+    def change_direction(self):
+        '''This method causes the y direction of the ball to reverse.'''
+        self.__dy = -self.__dy
+
+    def update(self):
+        '''This method will be called automatically to reposition the
+        ball sprite on the screen.'''
+        # Check if we have reached the left or right end of the screen.
+        # If not, then keep moving the ball in the same x direction.
+        if ((self.rect.left > 0) and (self.__dx < 0)) or ((self.rect.right < self.__screen.get_width()) and (self.__dx > 0)):
+            self.rect.left += self.__dx
+        # If yes, then reverse the x direction.
+        else:
+            self.__dx = -self.__dx
+
+        # Check if we have reached the top or bottom of the court.
+        # If not, then keep moving the ball in the same y direction.
+        if ((self.rect.top-40 > 0) and (self.__dy > 0)) or ((self.rect.bottom < self.__screen.get_height()) and (self.__dy < 0)):
+            self.rect.top -= self.__dy
+        # If yes, then reverse the y direction.
+        else:
+            self.__dy = -self.__dy
+
+
+class Player(pygame.sprite.Sprite):
+    '''This class defines the sprite for Player 1 and Player 2'''
+    def __init__(self, screen, player_num):
+        '''This initializer takes a screen surface, and player number as
+        parameters.  Depending on the player number it loads the appropriate
+        image and positions it on the left or right end of the court'''
+        # Call the parent __init__() method
+        pygame.sprite.Sprite.__init__(self)
+
+        # Define the image attributes for a white rectangle.
+        self.image = pygame.Surface((140, 10))
+        self.image.fill((255, 255, 255))
+        self.rect = self.image.get_rect()
+
+        # If we are initializing a sprite for player 1,
+        # position it 50 pixels from the bottom of the screen
+        # Center the player horizontally in the window.
+        if player_num == 1:
+            self.rect.left = 10
+            self.rect.bottom = screen.get_height()-50
+        else:
+            self.rect.right = screen.get_width()-10
+            self.rect.bottom = screen.get_height()-10
+
+        self.__screen = screen
+        self.__dx = 0
+
+    def change_direction(self, xy_change):
+        '''This method takes a (x,y) tuple as a parameter, extracts the
+        x element from it, and uses this to set the players x direction.'''
+        self.__dx = xy_change[1]
+
+    def player_sound(self):
+        self.boing = pygame.mixer.Sound("boing.mp3")
+        self.boing.set_volume(0.5)
+        self.boing.play()
+
+    def point_sound(self):
+        self.point = pygame.mixer.Sound("boing2.mp3")
+        self.point.set_volume(0.5)
+        self.point.play()
+
+        # Changes the width of the player when half of the bricks are hit
+    def half(self):
+        self.image = pygame.Surface((70, 10))
+        self.image.fill((255, 255, 255))
+
+    def update(self):
+        '''This method will be called automatically to reposition the
+        player sprite on the screen.'''
+        # Check if we have reached the left or right of the screen.
+        # If not, then keep moving the player in the same x direction.
+        if ((self.rect.left > 0) and (self.__dx > 0)) or ((self.rect.right < self.__screen.get_width()) and (self.__dx < 0)):
+            self.rect.left -= (self.__dx*6)
+        # If yes, then we don't change the x position of the player at all.
+
+class Bricks(pygame.sprite.Sprite):
+    '''This class defines the sprite for the bricks'''
+    def __init__(self, screen, colour, x_pos, y_pos):
+        '''This initializer takes a screen surface, the colour, and
+        the x and y positions as parameters.  Depending on the colour
+        and coordinates of the bricks, it determines their location
+        and view on the screen.'''
+        pygame.sprite.Sprite.__init__(self)
+
+        self.image = pygame.Surface(((screen.get_width()/18), 15))
+        self.image.fill(colour)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x_pos
+        self.rect.centery = y_pos
+
+class EndZone(pygame.sprite.Sprite):
+    #This class defines the sprite for our bottom end zone
+    def __init__(self, screen):
+        #This initializer takes a screen surface as a parameter.
+        # Call the parent __init__() method
+        pygame.sprite.Sprite.__init__(self)
+
+        # Our endzone sprite will be a 1 pixel wide black line.
+        self.image = pygame.Surface((screen.get_width(), 1))
+        self.image = self.image.convert()
+        self.image.fill((0, 0, 0))
+
+        # Set the rect attributes for the endzone
+        self.rect = self.image.get_rect()
+        self.rect.top = screen.get_height() - 1
+
+class ScoreKeeper(pygame.sprite.Sprite):
+    '''This class defines a label sprite to display the score.'''
+    def __init__(self, num):
+        '''This initializer loads the system font "Amatic", and
+        sets the starting score to 0 and lives to 3'''
+        # Call the parent __init__() method
+        pygame.sprite.Sprite.__init__(self)
+
+        # Load our custom font, and initialize the starting score.
+        self.__font = pygame.font.Font("Amatic-Bold.ttf", 40)
+        self.__life = 3
+        self.__score = 0
+        self.__count = 0
+        self.__scoreNum = num
+
+    def life(self):
+        '''This method takes away a life'''
+        self.__life -= 1
+
+    def score(self, points):
+        '''This method adds one to the score'''
+        self.__score += points
+
+    def brick_count(self):
+        '''This method adds one to the brick count'''
+        self.__count += 1
+
+    def half_bricks(self):
+        '''This method identifys when half the bricks are hit'''
+        if self.__count == 54:
+            return 1
+
+    def update(self):
+        '''This method will be called automatically to display
+        the lives and current score at the top of the game window.'''
+
+        if self.__scoreNum == 1:
+            message = "Score: %d" % (self.__score)
+            self.image = self.__font.render(message, 1, (255, 255, 255))
+            self.rect = self.image.get_rect()
+            self.rect.center = (600, 30)
+
+        elif self.__scoreNum == 2:
+            message = "Lives:"
+            self.image = self.__font.render(message, 1, (255, 255, 255))
+            self.rect = self.image.get_rect()
+            self.rect.center = (100, 30)
+
+        elif self.__scoreNum == 3:
+            if self.__life == 3: # DISPLAY 3 HEARTS
+                self.image = pygame.image.load("lover3.png")
+                self.image = pygame.transform.scale(self.image, (90, 30))
+                self.image.convert()
+                self.rect = self.image.get_rect()
+                self.rect.center = (180, 35)
+
+            elif self.__life == 2: # DISPLAY 2 HEARTS
+                self.image = pygame.image.load("lover2.png")
+                self.image = pygame.transform.scale(self.image, (60, 30))
+                self.image.convert()
+                self.rect = self.image.get_rect()
+                self.rect.center = (165, 35)
+
+            elif self.__life == 1: # DISPLAY 1 HEART
+                self.image= pygame.image.load("lover.png")
+                self.image = pygame.transform.scale(self.image, (30, 30))
+                self.image.convert()
+                self.rect = self.image.get_rect()
+                self.rect.center = (150, 35)
+
+            else: # DISPLAY "GAME OVER!"
+                self.__font = pygame.font.Font("Amatic-Bold.ttf", 100)
+                message = "GAME OVER!"
+                self.image = self.__font.render(message, 5, (255, 255, 255))
+                self.rect = self.image.get_rect()
+                self.rect.center = (360, 240)

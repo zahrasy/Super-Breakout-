@@ -1,0 +1,259 @@
+"""
+Name: Zahra Syed
+Date: April 14, 2022
+Assignment: Super Break-Out!
+Description: This is the Main file for the Breakout code. In this file,
+            the sprites and functions from the sprites file are called
+            put tigether in order to create the Super Breakout game. The
+            two enchancement which are implemented are:
+
+            --> Instead of all bricks being worth 1 point, make blue bricks
+                1 pt, green 2 pts, yellow 3 pts, orange 4 pts, red 5 pts,
+                and pink 6 pts.
+            --> Once half of the bricks have been destroyed, cut the width
+                of the paddle in half as well.
+            --> Add another paddle and ball so that two people can work
+                together to beat the game.
+"""
+# I - IMPORT AND INITIALIZE
+import pygame, zahraBreakoutSprites
+pygame.init()
+screen = pygame.display.set_mode((720, 480)) #changing it to 720 shows no lines between the bricks
+
+def main():
+    '''This function defines the 'mainline logic' for our Super Breakout game.'''
+
+    # DISPLAY
+    pygame.display.set_caption("Super Break Out!")
+
+    # ENTITIES
+    #background image
+    background = pygame.Surface(screen.get_size())
+    background = pygame.image.load("image.png")
+    background = pygame.transform.scale(background, screen.get_size())
+    background = background.convert()
+    screen.blit(background, (0, 0))
+
+    #BG MUSIC
+    pygame.mixer.music.load("surf.mp3")
+    pygame.mixer.music.set_volume(0.4)
+    pygame.mixer.music.play(-1)
+
+    # Sprites for: ScoreKeeper label, End Zone, Balls, and Players
+    ball1 = zahraBreakoutSprites.Ball(screen, 1)
+    ball2 = zahraBreakoutSprites.Ball(screen, 2)
+    player1 = zahraBreakoutSprites.Player(screen, 1)
+    player2 = zahraBreakoutSprites.Player(screen, 2)
+    endzone = zahraBreakoutSprites.EndZone(screen)
+
+    # labels / scoerboard
+    score_keeper = zahraBreakoutSprites.ScoreKeeper(1)
+    lives = zahraBreakoutSprites.ScoreKeeper(2)
+    hearts = zahraBreakoutSprites.ScoreKeeper(3)
+
+    # grouping all sprites together except for bricks.
+    # bricks have a seperate group; create initial group and add to it as you make bricks
+    allSprites = pygame.sprite.Group(ball1, ball2, player1, player2, endzone, score_keeper, lives, hearts)
+
+    x_pos = 20 #this number allows the bricks to fill up the entire row and leave no space at the end
+    row1 = []            #PINK BRICK
+    for i in range(18):
+        brick = zahraBreakoutSprites.Bricks(screen, (255, 0, 255), x_pos, 75)
+        row1.append(brick)
+        x_pos = (screen.get_width() / 18) + x_pos
+        b1 = pygame.sprite.Group(row1)
+
+    x_pos = 20
+    row2 = []           #RED BRICK
+    for i in range(18):
+        brick = zahraBreakoutSprites.Bricks(screen, (255, 0, 0), x_pos, 90)
+        row2.append(brick)
+        x_pos = (screen.get_width() / 18) + x_pos
+        b2 = pygame.sprite.Group(row2)
+
+    x_pos = 20
+    row3 = []           #ORANGE BRICK
+    for i in range(18):
+        brick = zahraBreakoutSprites.Bricks(screen, (255, 120, 0), x_pos, 105)
+        row3.append(brick)
+        x_pos = (screen.get_width() / 18) + x_pos
+        b3 = pygame.sprite.Group(row3)
+
+    x_pos = 20
+    row4 = []           #YELLOW BRICK
+    for i in range(18):
+        brick = zahraBreakoutSprites.Bricks(screen, (255, 255, 0), x_pos, 120)
+        row4.append(brick)
+        x_pos = (screen.get_width() / 18) + x_pos
+        b4 = pygame.sprite.Group(row4)
+
+    x_pos = 20
+    row5 = []           #GREEN BRICK
+    for i in range(18):
+        brick = zahraBreakoutSprites.Bricks(screen, (0, 255, 0), x_pos, 135)
+        row5.append(brick)
+        x_pos = (screen.get_width() / 18) + x_pos
+        b5 = pygame.sprite.Group(row5)
+
+    x_pos = 20
+    row6 = []           #BLUE BRICK
+    for i in range(18):
+        brick = zahraBreakoutSprites.Bricks(screen, (0, 0, 255), x_pos, 150)
+        row6.append(brick)
+        x_pos = (screen.get_width() / 18) + x_pos
+        b6 = pygame.sprite.Group(row6)
+
+# ASSIGN
+    clock = pygame.time.Clock()
+    keepGoing = True
+
+    # Hide the mouse pointer
+    pygame.mouse.set_visible(False)
+
+    # LOOP
+    while keepGoing:
+
+        # TIME
+        clock.tick(50)
+
+        # EVENT HANDLING: Player 1 uses arrow keys, Player 2 uses mouse
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.mixer.music.fadeout(2000)
+                keepGoing = False
+
+            elif event.type == pygame.KEYDOWN:
+                if (event.key == pygame.K_LEFT):
+                    player1.change_direction((0, 1))
+                if (event.key == pygame.K_RIGHT):
+                    player1.change_direction((0, -1))
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                player2.change_direction((0, 1))
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                player2.change_direction((0, -1))
+
+        # Check if balls collide with end zone
+        if ball1.rect.colliderect(endzone):
+            hearts.life()
+            ball1.change_direction()
+            player1.point_sound()
+
+        if ball2.rect.colliderect(endzone):
+            hearts.life()
+            ball2.change_direction()
+            player1.point_sound()
+
+        # Check if balls colllide with bricks
+        # Row 1
+        if pygame.sprite.spritecollide(ball1, b1, True):
+            score_keeper.score(6)
+            ball1.change_direction()
+            score_keeper.brick_count()
+        if pygame.sprite.spritecollide(ball2, b1, True):
+            score_keeper.score(6)
+            ball2.change_direction()
+            score_keeper.brick_count()
+
+        # Row 2
+        if pygame.sprite.spritecollide(ball1, b2, True):
+            score_keeper.score(5)
+            ball1.change_direction()
+            score_keeper.brick_count()
+        if pygame.sprite.spritecollide(ball2, b2, True):
+            score_keeper.score(5)
+            ball2.change_direction()
+            score_keeper.brick_count()
+
+        # Row 3
+        if pygame.sprite.spritecollide(ball1, b3, True):
+            score_keeper.score(4)
+            ball1.change_direction()
+            score_keeper.brick_count()
+        if pygame.sprite.spritecollide(ball2, b3, True):
+            score_keeper.score(4)
+            ball2.change_direction()
+            score_keeper.brick_count()
+
+        # Row 4
+        if pygame.sprite.spritecollide(ball1, b4, True):
+            score_keeper.score(3)
+            ball1.change_direction()
+            score_keeper.brick_count()
+        if pygame.sprite.spritecollide(ball2, b4, True):
+            score_keeper.score(3)
+            ball2.change_direction()
+            score_keeper.brick_count()
+
+        # Row 5
+        if pygame.sprite.spritecollide(ball1, b5, True):
+            score_keeper.score(2)
+            ball1.change_direction()
+            score_keeper.brick_count()
+        if pygame.sprite.spritecollide(ball2, b5, True):
+            score_keeper.score(2)
+            ball2.change_direction()
+            score_keeper.brick_count()
+
+        # Row 6
+        if pygame.sprite.spritecollide(ball1, b6, True):
+            score_keeper.score(1)
+            ball1.change_direction()
+            score_keeper.brick_count()
+        if pygame.sprite.spritecollide(ball2, b6, True):
+            score_keeper.score(1)
+            ball2.change_direction()
+            score_keeper.brick_count()
+
+        # Check when half of the bricks have been destroyed
+        if score_keeper.half_bricks() == 1:
+            player1.half()
+            player2.half()
+
+        # Check if ball hits Player 1 or 2
+        if ball1.rect.colliderect(player1.rect) or ball1.rect.colliderect(player2.rect):
+            ball1.change_direction()
+            player1.player_sound()
+
+        if ball2.rect.colliderect(player1.rect) or ball2.rect.colliderect(player2.rect):
+            ball2.change_direction()
+            player1.player_sound()
+
+        # REFRESH SCREEN
+        b1.clear(screen, background)
+        b1.update()
+        b1.draw(screen)
+
+        b2.clear(screen, background)
+        b2.update()
+        b2.draw(screen)
+
+        b3.clear(screen, background)
+        b3.update()
+        b3.draw(screen)
+
+        b4.clear(screen, background)
+        b4.update()
+        b4.draw(screen)
+
+        b5.clear(screen, background)
+        b5.update()
+        b5.draw(screen)
+
+        b6.clear(screen, background)
+        b6.update()
+        b6.draw(screen)
+
+        allSprites.clear(screen, background)
+        allSprites.update()
+        allSprites.draw(screen)
+        pygame.display.flip()
+
+    # Unhide the mouse pointer
+    pygame.mouse.set_visible(True)
+
+
+# Call the main function
+main() 
+
